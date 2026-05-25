@@ -11,6 +11,9 @@
 # production
 /build
 
+# maven-plugin binaries
+/node/
+
 # misc
 .DS_Store
 .env.local

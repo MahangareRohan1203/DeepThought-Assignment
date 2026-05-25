@@ -1,30 +1,97 @@
-[![CICD](https://github.com/amigoscode/spring-boot-fullstack-professional/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/amigoscode/spring-boot-fullstack-professional/actions/workflows/deploy.yml)
+# HRMS Backend - Worker Attendance & Overtime Settlement Engine
 
-https://amigoscode.com/p/full-stack-spring-boot-react
+This project is a robust, scalable HRMS backend built for a construction company to manage their blue-collar workforce. It features a real-time attendance tracking system, an automated overtime calculation engine, and a monthly settlement processor.
 
-![Cover](https://user-images.githubusercontent.com/40702606/111074799-bdfbcf00-84dc-11eb-98c0-d40a99aa0da7.png)
+## Tech Stack
+- **Java 17** with **Spring Boot 3.2.5**
+- **Spring Data JPA** (Hibernate)
+- **PostgreSQL** (via Supabase or Local Docker)
+- **Redis** (Caching layer)
+- **Lombok** (Boilerplate reduction)
+- **Maven** (Build tool)
+- **Docker & Docker Compose** (Local infrastructure)
+- **React 18** (Frontend Management Dashboard)
 
-# Course Description
-Spring Boot allows to take an idea/prototype and turn it into a real thing in matters minutes hours of months and years. A lot of companies use Spring Boot because it's easy to setup, learn and write code very fast without having to setup the low level platform code. Recently, Netflix has decided to switch their entire backend to Spring Boot. This shows that Spring Boot is a must if you are or want to become a software engineer in the Java world.
-This course teaches how to build a full stack application from the ground up and touches on very import concepts used in real live software development. Concepts such as:
+## Key Features & Design Decisions
 
-- Spring Boot Backend API
-- Frontend with React.js Hooks and Functions Components
-- Maven Build Tool
-- Databases using Postgres on Docker
-- Spring Data JPA
-- Server and Client Side Error Handling
-- Packaging applications for deployment using Docker and Jib
-- AWS RDS & Elastic Beanstalk
-- Software Deployment Automation with Github Actions
-- Software Deployment Monitoring with Slack
-- Unit and Integration Testing
+### 1. Attendance & Overtime Engine
+- **Atomic Clock-in/Clock-out:** Prevents double entries and ensures data integrity.
+- **Dynamic Overtime Calculation:** Implements a tiered rate system (1.5x for first 2 hours, 2x beyond) and enforces a 60-hour monthly cap.
+- **Real-time Monitoring:** Active workers are cached in Redis with a 16-hour TTL for high-performance site supervisor dashboards.
 
-This course focus on teaching you the process needed to build your own apps and deploy to real users using real software development techniques and skills. The skills gained at the end of this can be applied immediately on your own projects, university projects and at your work place.
+### 2. SOLID Principles & Design Patterns
+- **Interface-based Services:** Adheres to the Dependency Inversion Principle for all service layer abstractions.
+- **DTO Pattern:** Decouples internal entities from API contracts using specialized request/response objects.
+- **Observer Pattern:** Uses Spring Events and `@TransactionalEventListener` for decoupled post-commit notifications (SMS).
+- **Strategy/Override Pattern:** Supports site-specific business rule overrides with global fallbacks.
 
-Have you got what it takes to become a professional software engineer? Cool I'll see you inside. https://amigoscode.com/p/full-stack-spring-boot-react
+### 3. Performance & Auditability
+- **N+1 Query Prevention:** Uses `@EntityGraph` to optimize database retrieval.
+- **Self-Healing Cache:** Automatically re-populates Redis from the DB after a server restart or cache miss.
+- **Automated Auditing:** Every record tracks its own `createdAt` and `updatedAt` timestamps automatically.
 
-![Screenshot 2021-03-11 at 22 56 19](https://user-images.githubusercontent.com/40702606/111074929-5003d780-84dd-11eb-8284-e7c92c7e2905.png)
+---
 
-<img width="773" alt="Screenshot 2021-03-12 at 20 48 48" src="https://user-images.githubusercontent.com/40702606/111074947-627e1100-84dd-11eb-9d3f-85fdbf23e290.png">
+## Setup Instructions (Newbie Friendly)
 
+### Prerequisites
+- **JDK 17+** (Ensure `java -version` shows 17 or higher)
+- **Maven** (`mvn -v`)
+- **Docker Desktop** (Required for local Redis and Database)
+- **Node.js 18+** (Required for the Frontend)
+
+### 1. Start Local Infrastructure
+Run this command in the project root to start Redis and PostgreSQL in the background:
+```bash
+docker-compose up -d
+```
+*Note: Hibernate will automatically create all required tables once the backend starts.*
+
+### 2. Configure Environment
+1.  Copy the example configuration: `cp .env.example .env`
+2.  Open `.env` and ensure the values match your setup (The defaults work out-of-the-box with Docker).
+
+### 3. Start the Backend
+Open a terminal in the project root and run:
+```bash
+# On Linux/macOS:
+export $(cat .env | xargs) && ./mvnw spring-boot:run -DskipTests -P!build-frontend
+
+# On Windows (PowerShell):
+foreach($line in Get-Content .env) { $split = $line.Split('='); if($split[0]) { [System.Environment]::SetEnvironmentVariable($split[0], $split[1]) } }; ./mvnw.cmd spring-boot:run -DskipTests -P!build-frontend
+```
+
+### 4. Start the Frontend
+Open a **new** terminal window:
+```bash
+cd src/frontend
+npm install
+npm start
+```
+*The dashboard will open at `http://localhost:3000`.*
+
+---
+
+## API Endpoints
+
+### Attendance
+- `POST /api/attendance/clock-in`: Clock in a worker.
+- `POST /api/attendance/clock-out`: Clock out and trigger overtime calculation.
+- `GET /api/attendance/active`: List currently clocked-in workers (Redis-backed).
+- `GET /api/attendance/log`: View a worker's full history (Paginated).
+
+### Overtime & Management
+- `GET /api/overtime/summary/{workerId}?month=2026-05`: Monthly breakdown.
+- `POST /api/overtime/settle/{workerId}?month=2026-05`: Process settlement.
+- `POST /api/workers`: Register a new worker.
+- `POST /api/sites`: Register a site (optionally provide custom shift rules).
+
+## Ticket Blitz Resolutions (Production Fixes)
+- **LF-201 (CORS):** Global `WebMvcConfigurer` implementation.
+- **LF-202 (Resilience):** `CacheErrorHandler` + Self-Healing DB fallback.
+- **LF-203 (N+1):** Fetch Join optimization via `@EntityGraph`.
+- **LF-204 (Transactions):** Post-commit SMS notifications using the Observer pattern.
+- **LF-205 (Pool Optimization):** HikariCP tuning and pre-transactional external API fetching.
+
+---
+*Developed for the DeepThought Hiring Assignment, May 2026.*

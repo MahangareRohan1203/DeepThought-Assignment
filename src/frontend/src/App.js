@@ -21,9 +21,11 @@ import {
     TeamOutlined,
     UserOutlined,
     LoadingOutlined,
-    PlusOutlined
+    PlusOutlined,
+    SafetyCertificateOutlined
 } from '@ant-design/icons';
 import StudentDrawerForm from "./StudentDrawerForm";
+import HRMSTester from "./HRMSTester";
 
 import './App.css';
 import {errorNotification, successNotification} from "./Notification";
@@ -114,6 +116,7 @@ function App() {
     const [collapsed, setCollapsed] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [showDrawer, setShowDrawer] = useState(false);
+    const [selectedKey, setSelectedKey] = useState('1');
 
     const fetchStudents = () =>
         getAllStudents()
@@ -137,7 +140,11 @@ function App() {
         fetchStudents();
     }, []);
 
-    const renderStudents = () => {
+    const renderContent = () => {
+        if (selectedKey === '2') {
+            return <HRMSTester />
+        }
+
         if (fetching) {
             return <Spin indicator={antIcon}/>
         }
@@ -189,12 +196,12 @@ function App() {
         <Sider collapsible collapsed={collapsed}
                onCollapse={setCollapsed}>
             <div className="logo"/>
-            <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline">
+            <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" onSelect={({key}) => setSelectedKey(key)}>
                 <Menu.Item key="1" icon={<PieChartOutlined/>}>
-                    Option 1
+                    Students
                 </Menu.Item>
-                <Menu.Item key="2" icon={<DesktopOutlined/>}>
-                    Option 2
+                <Menu.Item key="2" icon={<SafetyCertificateOutlined/>}>
+                    HRMS Tester
                 </Menu.Item>
                 <SubMenu key="sub1" icon={<UserOutlined/>} title="User">
                     <Menu.Item key="3">Tom</Menu.Item>
@@ -214,11 +221,11 @@ function App() {
             <Header className="site-layout-background" style={{padding: 0}}/>
             <Content style={{margin: '0 16px'}}>
                 <Breadcrumb style={{margin: '16px 0'}}>
-                    <Breadcrumb.Item>User</Breadcrumb.Item>
-                    <Breadcrumb.Item>Bill</Breadcrumb.Item>
+                    <Breadcrumb.Item>Dashboard</Breadcrumb.Item>
+                    <Breadcrumb.Item>{selectedKey === '1' ? 'Students' : 'HRMS'}</Breadcrumb.Item>
                 </Breadcrumb>
                 <div className="site-layout-background" style={{padding: 24, minHeight: 360}}>
-                    {renderStudents()}
+                    {renderContent()}
                 </div>
             </Content>
             <Footer style={{textAlign: 'center'}}>
